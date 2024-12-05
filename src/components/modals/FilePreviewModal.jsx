@@ -20,7 +20,7 @@ const FilePreviewModal = ({ processedFile, isVisible, onClose }) => {
               <embed
                 src={processedFile}
                 width="100%"
-                height="400"
+                height="500"
                 type="application/pdf"
                 className="rounded-md border border-gray-300"
               />
@@ -29,7 +29,7 @@ const FilePreviewModal = ({ processedFile, isVisible, onClose }) => {
             )}
           </div>
   
-          <div className="mt-4 flex justify-end">
+          {/* <div className="mt-4 flex justify-end">
             <a
               href={processedFile}
               download="processed.pdf"
@@ -37,7 +37,7 @@ const FilePreviewModal = ({ processedFile, isVisible, onClose }) => {
             >
               Download
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
     );
