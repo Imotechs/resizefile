@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "postinstall": "apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
