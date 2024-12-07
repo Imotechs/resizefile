@@ -1,19 +1,89 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 import FilePreviewModal from "./modals/FilePreviewModal";
 import PreviewButton from "./buttons/PreviewButton";
 import SuccessAnimation from "./loaders/SuccessAnimation";
 import StarLoader from "./loaders/StarLoader";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 
+// Set the worker globally
+GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${getDocument.version}/pdf.worker.min.js`;
 const PDFSplitter = () => {
+  const [error, setError] = useState(null);
+  const [lockPdfFile, setLockPdfFile] = useState(null);
+  const [pdfPassword, setPdfPassword] = useState("");
+  const [pdfDoc, setPdfDoc] = useState(null);
+  const canvasRef = useRef(null);
+
+  const handleUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      setLockPdfFile(file);
+      setError(null); // Clear any previous error
+    } else {
+      setError("Please upload a valid PDF file.");
+    }
+  };
+
+  const loadPDF = async () => {
+    if (!lockPdfFile) {
+      setError("Please upload a PDF file first.");
+      return;
+    }
+
+    try {
+      const arrayBuffer = await lockPdfFile.arrayBuffer(); // Convert file to ArrayBuffer
+      const pdfDocument = await getDocument({
+        data: arrayBuffer,
+        password: pdfPassword,
+      }).promise;
+      setPdfDoc(pdfDocument);
+      console.log(
+        `PDF loaded successfully. Total pages: ${pdfDocument.numPages}`
+      );
+
+      // Render the first page of the PDF
+      renderPage(pdfDocument, 1);
+    } catch (error) {
+      console.error("Error loading PDF:", error);
+      if (error.name === "PasswordException") {
+        alert("Incorrect password. Please try again.");
+      } else {
+        alert("Failed to load the PDF document. Please check the file.");
+      }
+    }
+  };
+
+  const renderPage = async (pdfDocument, pageNumber) => {
+    try {
+      const page = await pdfDocument.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      // Set canvas dimensions to match the PDF page
+      const canvas = canvasRef.current;
+      const context = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      // Render the PDF page onto the canvas
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+      await page.render(renderContext).promise;
+    } catch (error) {
+      console.error("Error rendering page:", error);
+    }
+  };
+
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [downloadFormat, setDownloadFormat] = useState("pdf");
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileUpload = async(e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -184,6 +254,30 @@ const PDFSplitter = () => {
 
   return (
     <>
+      {/* <div>
+        <h2>Upload and Unlock PDF</h2>
+        <input type="file" accept="application/pdf" onChange={handleUpload} />
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        {lockPdfFile && (
+          <div>
+            <input
+              type="password"
+              placeholder="Enter PDF password"
+              value={pdfPassword}
+              onChange={(e) => setPdfPassword(e.target.value)}
+            />
+            <button onClick={loadPDF}>Unlock PDF</button>
+          </div>
+        )}
+
+        {pdfDoc && (
+          <div>
+            <h3>PDF Preview</h3>
+            <canvas ref={canvasRef}></canvas>
+          </div>
+        )}
+      </div> */}
 
       <main className="flex justify-center pt-20 pb-5 h-screen">
         <div className="w-full max-w-lg mx-auto flex flex-col gap-12 items-center">
@@ -192,12 +286,12 @@ const PDFSplitter = () => {
               Automate Your PDFs
             </h1>
             <input
-                type="file"
-                id="fileID"
-                accept="application/pdf"
-                onChange={handleFileUpload}
-                className="file:p-2 hover:file:cursor-pointer"
-              />
+              type="file"
+              id="fileID"
+              accept="application/pdf"
+              onChange={handleFileUpload}
+              className="file:p-2 hover:file:cursor-pointer"
+            />
             <div onClick={splitPDF}>
               <div className="flex justify-center w-auto">
                 <p className="cursor-pointer rounded-full px-8 py-3 bg-blue-600 text-white font-semibold leading-5 text-[1.2rem]">
@@ -278,3 +372,205 @@ const PDFSplitter = () => {
 };
 
 export default PDFSplitter;
+
+// import { useState, useRef } from "react";
+// import { PDFDocument } from "pdf-lib"; // Assuming pdf-lib is being used
+// import { getDocument } from "pdfjs-dist";
+
+// const PdfUploaderAndSplitter = () => {
+//   const [error, setError] = useState(null);
+//   const [lockPdfFile, setLockPdfFile] = useState(null);
+//   const [lockFile, setLockFile] = useState(null);
+//   const [pdfPassword, setPdfPassword] = useState("");
+//   const [pdfDoc, setPdfDoc] = useState(null);
+//   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const canvasRef = useRef(null);
+
+//   const handleUpload = (e) => {
+//     const file = e.target.files[0];
+//     if (file && file.type === "application/pdf") {
+//       setLockPdfFile(file);
+//       setError(null); // Clear any previous error
+//     } else {
+//       setError("Please upload a valid PDF file.");
+//     }
+//   };
+
+//   const handlePasswordChange = (e) => {
+//     setPdfPassword(e.target.value);
+//   };
+
+//   const loadPDF = async () => {
+//     if (!lockPdfFile) {
+//       setError("Please upload a PDF file first.");
+//       return;
+//     }
+
+//     try {
+//       const arrayBuffer = await lockPdfFile.arrayBuffer(); // Convert file to ArrayBuffer
+//       const pdfDocument = await getDocument({
+//         data: arrayBuffer,
+//         password: pdfPassword,
+//       }).promise;
+
+//       setPdfDoc(pdfDocument);
+//       console.log(`PDF loaded successfully. Total pages: ${pdfDocument.numPages}`);
+
+//       // Render the first page of the PDF
+//       renderPage(pdfDocument, 1);
+
+//       // Store the arrayBuffer to use in splitPDF
+//       const pdfBytes = await pdfDocument.getData(); // Decrypted bytes of the PDF
+//       const unlockedBlob = new Blob([pdfBytes], { type: "application/pdf" });
+
+//       // Convert the Blob back to an ArrayBuffer for pdf-lib
+//       const unlockedArrayBuffer = await unlockedBlob.arrayBuffer();
+
+//       setLockFile(unlockedArrayBuffer); // Store the ArrayBuffer
+//     } catch (error) {
+//       console.error("Error loading PDF:", error);
+//       if (error.name === "PasswordException") {
+//         alert("Incorrect password. Please try again.");
+//       } else {
+//         alert("Failed to load the PDF document. Please check the file.");
+//       }
+//     }
+//   };
+
+//   const renderPage = async (pdfDocument, pageNumber) => {
+//     try {
+//       const page = await pdfDocument.getPage(pageNumber);
+//       const viewport = page.getViewport({ scale: 1.5 });
+
+//       const canvas = canvasRef.current;
+//       const context = canvas.getContext("2d");
+//       canvas.width = viewport.width;
+//       canvas.height = viewport.height;
+
+//       const renderContext = {
+//         canvasContext: context,
+//         viewport: viewport,
+//       };
+//       await page.render(renderContext).promise;
+//     } catch (error) {
+//       console.error("Error rendering page:", error);
+//     }
+//   };
+
+//   const splitPDF = async () => {
+//     if (!lockFile) return alert("Please upload a PDF first!");
+
+//     setIsLoading(true);
+
+//     try {
+//     //   const pdfDoc = await PDFDocument.load(lockFile, { ignoreEncryption: true }); // Load the unlocked PDF
+//       const newPdfDoc = await PDFDocument.create();
+
+//       console.log(lockFile);
+
+//       const pdfDoc = await PDFDocument.load(lockFile)
+
+// // Get the first page of the document
+// // const pages = pdfDoc.getPages()
+
+//       const firstPage = pdfDoc.getPages()[0];
+//       const { width, height } = firstPage.getSize();
+
+//       // Define the original regions (use full width and a portion of the height)
+//       const bottomLeftRegion = {
+//         x: 0,
+//         y: 0,
+//         width: width / 2 - 4, // Full width
+//         height: height * 0.325, // Half the height
+//       };
+
+//       const bottomRightRegion = {
+//         x: width / 2 + 3, // Position to the right
+//         y: 0,
+//         width: width / 2, // Full width
+//         height: height * 0.325, // Half the height
+//       };
+
+//       // Embed the regions
+//       const embedRegion = async (region) => {
+//         try {
+//           const embeddedPages = await newPdfDoc.embedPages(
+//             [firstPage],
+//             [
+//               {
+//                 left: region.x,
+//                 bottom: region.y,
+//                 right: region.x + region.width,
+//                 top: region.y + region.height,
+//               },
+//             ]
+//           );
+//           return embeddedPages[0];
+//         } catch (error) {
+//           console.error("Error embedding region:", error);
+//           throw error;
+//         }
+//       };
+
+//       const bottomLeftEmbedded = await embedRegion(bottomLeftRegion);
+//       const bottomRightEmbedded = await embedRegion(bottomRightRegion);
+
+//       // A4 page dimensions
+//       const A4_WIDTH = 595.28;
+//       const A4_HEIGHT = 841.89;
+
+//       const newPage = newPdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+
+//       // Position the bottom left region
+//       newPage.drawPage(bottomLeftEmbedded, {
+//         x: 15,
+//         y: A4_HEIGHT - 200, // Adjusted Y
+//         width: 200,
+//         height: 200,
+//       });
+
+//       // Save the new PDF
+//       const newPdfBytes = await newPdfDoc.save();
+//       const blob = new Blob([newPdfBytes], { type: "application/pdf" });
+//       const previewUrl = await URL.createObjectURL(blob);
+
+//       setPdfPreviewUrl(previewUrl);
+
+//       console.log("PDF generated successfully!");
+//     } catch (error) {
+//       console.error("Error processing PDF:", error);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <h1>PDF Uploader and Splitter</h1>
+//       <input type="file" accept="application/pdf" onChange={handleUpload} />
+//       <input
+//         type="password"
+//         placeholder="Enter PDF Password"
+//         value={pdfPassword}
+//         onChange={handlePasswordChange}
+//       />
+//       <button onClick={loadPDF}>Load PDF</button>
+//       <canvas ref={canvasRef}></canvas>
+//       <button onClick={splitPDF} disabled={!pdfDoc || isLoading}>
+//         {isLoading ? "Processing..." : "Split PDF"}
+//       </button>
+//       {error && <p style={{ color: "red" }}>{error}</p>}
+//       {pdfPreviewUrl && (
+//         <iframe
+//           src={pdfPreviewUrl}
+//           title="PDF Preview"
+//           width="100%"
+//           height="600px"
+//         ></iframe>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default PdfUploaderAndSplitter;
