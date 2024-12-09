@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 import FilePreviewModal from "./modals/FilePreviewModal";
@@ -24,6 +24,8 @@ const PDFSplitter = () => {
   const [pdfPassword, setPdfPassword] = useState("");
   const [isLocked, setIsLocked] = useState(false);
   const [arrayBuffer, setArrayBuffer] = useState(null);
+
+  const fileInputRef = useRef(null);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -53,7 +55,8 @@ const PDFSplitter = () => {
     setIsLoading(true);
     try {
       if (isLocked) {
-        const response = await fetch("http://localhost:5000/unlock-pdf", {
+        // https://unlock-pdf-1.onrender.com/
+        const response = await fetch("https://unlock-pdf-1.onrender.com/unlock-pdf", {
           method: "POST",
           body: formData,
         });
@@ -70,11 +73,17 @@ const PDFSplitter = () => {
         splitPDF(arrayBuffer, setPdfPreviewUrl, setIsLoading);
       } else {
         splitPDF(arrayBuffer, setPdfPreviewUrl, setIsLoading);
+        
       }
     } catch (error) {
+      alert(error)
       console.log(error);
     } finally {
       setIsLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Clear the file input
+      }
+      setPdfPassword("");
     }
   };
 
@@ -107,17 +116,17 @@ const PDFSplitter = () => {
 
   return (
     <>
-      <main className="w-full md:w-5/6 mx-auto pt-20 h-screen">
+      <main className="w-full md:w-5/6 mx-auto px-4 pt-20 h-screen">
         {/* <div className="w-full max-w-lg mx-auto flex flex-col gap-12 items-cente"> */}
-        <div className="grid grid-cols-2 gap-x-12 gap-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
           <div>
             <div className="flex flex-col gap-4">
-              <h1 className="text-[2rem] font-bold text-gray-700 leading-[24px] tracking-[1px]">
+              <h1 className="text-[2rem] font-bold text-gray-700 leading-[30px] tracking-[1px]">
                 Automate Your PDFs
               </h1>
               <input
                 type="file"
-                id="fileID"
+                ref={fileInputRef}
                 accept="application/pdf"
                 onChange={handleFileUpload}
                 className="file:p-1 hover:file:cursor-pointer"
@@ -135,19 +144,18 @@ const PDFSplitter = () => {
                     type="password"
                     id="Password"
                     name="password"
+                    value={pdfPassword}
                     placeholder="Enter File Password"
                     onChange={(e) => setPdfPassword(e.target.value)}
                     className="mt-1 w-full rounded-md border border-gray-400 p-3 bg-white text-sm text-gray-700 shadow-sm"
                   />
                 </div>
               )}
-              <div onClick={processPDF}>
                 <div className="flex justify-start w-auto">
-                  <p className="cursor-pointer rounded px-8 py-4 bg-blue-600 text-white font-semibold leading-5 text-[1.2rem]">
+                  <button onClick={processPDF} className="cursor-pointer rounded px-8 py-4 bg-blue-600 text-white font-semibold leading-5 text-[1.2rem]">
                     Click to Upload PDF
-                  </p>
+                  </button>
                 </div>
-              </div>
             </div>
           </div>
           <div className="flex justify-center items-center min-h-80">
