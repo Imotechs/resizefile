@@ -138,10 +138,11 @@ const PDFSplitter = () => {
       console.log(error);
     } finally {
       setIsLoading(false);
-      // if (fileInputRef.current) {
-      //   fileInputRef.current.value = ""; // Clear the file input
-      // }
-      // setPdfPassword("");
+      setDocName("")
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Clear the file input
+      }
+      setPdfPassword("");
     }
   };
 
