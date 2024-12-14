@@ -1,26 +1,27 @@
 import { PDFDocument } from "pdf-lib";
 
-export const splitPDF = async(arrayBuffer)=>{
+export const splitVotersCard = async(arrayBuffer)=>{
     const pdfDoc = await PDFDocument.load(arrayBuffer);
 
       const newPdfDoc = await PDFDocument.create();
       const firstPage = pdfDoc.getPages()[0];
       const { width, height } = firstPage.getSize();
 
-      // Define the original regions (use full width and a portion of the height)
-      const bottomLeftRegion = {
+
+      const topLeftRegion = {
         x: 0,
-        y: 0,
-        width: width / 2 - 4, // Full width
-        height: height * 0.325, // Half the height
+        y: height - height * 0.3230,
+        width: width / 2, // Full width
+        height: height * 0.233, // Half the height
       };
 
-      const bottomRightRegion = {
-        x: width / 2 + 3, // Position to the right
-        y: 0,
+      const topRightRegion = {
+        x: width / 2 + 10, // Position to the right
+        y: height - height * 0.3230,
         width: width / 2, // Full width
-        height: height * 0.325, // Half the height
+        height: height * 0.233, // 0.233 the height
       };
+
       // Embed the regions
       const embedRegion = async (region) => {
         try {
@@ -42,8 +43,8 @@ export const splitPDF = async(arrayBuffer)=>{
         }
       };
 
-      const bottomLeftEmbedded = await embedRegion(bottomLeftRegion);
-      const bottomRightEmbedded = await embedRegion(bottomRightRegion);
+      const topLeftEmbedded = await embedRegion(topLeftRegion);
+      const topRightEmbedded = await embedRegion(topRightRegion);
 
       // A4 page dimensions
       const A4_WIDTH = 595.28;
@@ -57,33 +58,35 @@ export const splitPDF = async(arrayBuffer)=>{
 
       // Scale regions to fit within the available space
       const scaleFactorWidth = availableWidth / width; // Scale based on full width
-      const scaleFactorHeight = availableHeight / (height * 0.65); // Scale based on region height (adjust to fit in A4)
+      const scaleFactorHeight = availableHeight / (height * 0.5); // Scale based on region height (adjust to fit in A4)
 
       const scaleFactor = Math.min(scaleFactorWidth, scaleFactorHeight); // Use the smaller of the two to maintain aspect ratio
 
       const scaledWidth = width * scaleFactor;
-      const scaledHeight = height * 0.65 * scaleFactor; // Use the region height scaled
+      const scaledHeight = height * 0.5 * scaleFactor; // Use the region height scaled
 
-      // Create a new page in the new PDF
+    //   // Create a new page in the new PDF
       const newPage = newPdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
 
 
       // Position the bottom left region (at the top of the page)
-      newPage.drawPage(bottomLeftEmbedded, {
-        x: 15,
+      newPage.drawPage(topLeftEmbedded, {
+        x: MARGIN_LEFT_RIGHT + 0.5,
         y: A4_HEIGHT - MARGIN_TOP_BOTTOM - scaledHeight, // Start from the top margin
         width: scaledWidth,
         height: scaledHeight,
       });
 
       // Position the bottom right region (below the bottom left region)
-      newPage.drawPage(bottomRightEmbedded, {
-        x: 73,
-        y: -20, //A4_HEIGHT - scaledHeight, // Place below with a gap
+      newPage.drawPage(topRightEmbedded, {
+        x: MARGIN_LEFT_RIGHT * 2 - 18,
+        y: 80, //A4_HEIGHT - scaledHeight, // Place below with a gap
         width: scaledWidth,
         height: scaledHeight,
       });
 
 
       return newPdfDoc;
+
+      
   }

@@ -1,7 +1,7 @@
 import * as pdfjsLib from "pdfjs-dist";
 
-export const convertPdfToImage = async (pdfPreviewUrl) => {
-    if (!pdfPreviewUrl) return alert("Please generate a preview PDF first!");
+export const convertPdfToImage = async (pdfPreviewUrl, showMessage) => {
+    if (!pdfPreviewUrl) return showMessage("error", "Please generate a preview PDF first!");
 
     // Load the PDF using pdfjs-dist
     const loadingTask = pdfjsLib.getDocument(pdfPreviewUrl);

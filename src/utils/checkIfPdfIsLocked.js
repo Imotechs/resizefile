@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
 import * as pdfjsLib from "pdfjs-dist";
 
-export const checkIfPdfIsLocked = async (file, setIsLocked) => {
+export const checkIfPdfIsLocked = async (file, setIsLocked, showMessage) => {
   if (!file) {
-    alert("Please upload a PDF file first.");
+    showMessage("error", "Please upload a PDF file first.");
     return;
   }
 
@@ -23,13 +23,13 @@ export const checkIfPdfIsLocked = async (file, setIsLocked) => {
         if (error.name === "PasswordException") {
           setIsLocked(true);
         } else {
-          alert("Error reading PDF.");
+          showMessage("error", "Error reading PDF.");
         }
       }
     };
 
     fileReader.readAsArrayBuffer(file);
   } catch (error) {
-    alert("Error reading the file.");
+    showMessage("error", "Error reading the file.");
   }
 };
