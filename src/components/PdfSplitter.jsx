@@ -14,6 +14,7 @@ import { splitAyushman } from "../utils/splitAyushman";
 import { CloudIcon } from "./svg_icons";
 import { Button, Input, Select } from "antd";
 import { useMessage } from "../hooks/useMessage";
+import { error } from "pdf-lib";
 
 // Set the worker globally
 // GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${getDocument.version}/pdf.worker.min.js`;
@@ -29,7 +30,7 @@ const PDFSplitter = () => {
   const [pdfPassword, setPdfPassword] = useState("");
   const [isLocked, setIsLocked] = useState(false);
   const [arrayBuffer, setArrayBuffer] = useState(null);
-  const [docName, setDocName] = useState("");
+  const [docName, setDocName] = useState(null);
 
   const { showMessage, contextHolder } = useMessage();
 
@@ -101,6 +102,7 @@ const PDFSplitter = () => {
         );
 
         if (!response.ok) {
+          // console.log(await response.text())
           throw new Error(await response.text());
         }
 
@@ -133,16 +135,21 @@ const PDFSplitter = () => {
       setIsLoading(false);
 
       setShowModal(true);
-    } catch (error) {
-      showMessage("error", error);
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-      setDocName("")
+
+
+      setDocName(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ""; // Clear the file input
       }
       setPdfPassword("");
+
+    } catch (error) {
+      const errMsg = error?.response?.data?.message || error?.message
+      showMessage("error", errMsg);
+    } 
+    finally {
+      setIsLoading(false);
+      
     }
   };
 
@@ -203,6 +210,7 @@ const PDFSplitter = () => {
                     style={{
                       minWidth: 150,
                     }}
+                    value={docName}
                     onChange={(value) => setDocName(value)}
                     options={[
                       { value: "ID_CARD", label: "ID CARD" },
@@ -216,8 +224,8 @@ const PDFSplitter = () => {
                   <CloudIcon size={30} />
                   <div>
                     <h4 className="font-medium">Choose a file here</h4>
-                    <p className="text-[#A9ACB4]">
-                      PDF format is only accepted
+                    <p className="text-[#A9ACB4] text-sm">
+                    Only PDF format is accepted
                     </p>
                   </div>
                   <label htmlFor="fileID">
@@ -235,10 +243,10 @@ const PDFSplitter = () => {
                   </label>
 
                   {pdfFile && (
-                    <p className="font-medium tracking-wide">
+                    <div className="font-medium tracking-wide p-2">
                       File Selected:{" "}
-                      <span className="text-[#9699a1]">{pdfFile.name}</span>
-                    </p>
+                      <p className="text-[#9699a1] break-all">{pdfFile.name}</p>
+                    </div>
                   )}
                   {isLocked && (
                     <div className="mb-3">
@@ -248,6 +256,7 @@ const PDFSplitter = () => {
                         style={{
                           width: "120",
                         }}
+                        value={pdfPassword}
                         placeholder="Enter File Password"
                         onChange={(e) => setPdfPassword(e.target.value)}
                       />
